@@ -1,0 +1,12 @@
+# Note: I think you want to run the source line in your current shell (IE not via this script)
+
+# Create a virtual environment in the current directory using Python's venv module
+python -m venv .venv
+
+# Activate the virtual environment to isolate dependencies
+source .venv/bin/activate
+
+# Install AMD specific torch libraries
+pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/rocm6.0
+
+pip install -r requirments.txt

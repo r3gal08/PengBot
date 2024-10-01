@@ -1,0 +1,16 @@
+ollama
+langchain-ollama
+langchain-community
+PyPDF2
+pypdf
+pdfminer.six
+Pillow
+torch
+transformers
+sentence-transformers
+datasets
+faiss-cpu
+tensorflow
+fpdf
+tf-keras
+dotenv

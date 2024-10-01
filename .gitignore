@@ -1,0 +1,6 @@
+# .gitignore
+.env
+.idea/
+.venv/
+Resources.pdf
+History/
