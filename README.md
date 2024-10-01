@@ -9,5 +9,5 @@ This project is a chatbot designed to assist with Peng studying in a conversatio
 * *Have the bot ask you questions and track your progress/understanding of the exam material*
 
 ## Contact
-brettleard808@gmail.com and [Linkedin](https://www.linkedin.com/in/brettmatthewleard?lipi=urn%3Ali%3Apage%3Ad_flagship3_profile_view_base_contact_details%3BQsJE40nKS%2FCxLk3T2bREaQ%3D%3D)
-
+* *brettleard808@gmail.com*
+* *[Linkedin](https://www.linkedin.com/in/brettmatthewleard?lipi=urn%3Ali%3Apage%3Ad_flagship3_profile_view_base_contact_details%3BQsJE40nKS%2FCxLk3T2bREaQ%3D%3D)*
