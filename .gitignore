@@ -3,5 +3,7 @@
 .idea/
 .venv/
 Resources.pdf
+History/*
+vectordb/*
 !History/
 !vectordb/
