@@ -5,5 +5,5 @@
 Resources.pdf
 History/*
 vectordb/*
-!History/
-!vectordb/
+!History/.gitkeep
+!vectordb/.gitkeep
