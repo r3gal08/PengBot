@@ -46,7 +46,6 @@ selected_pdf = "NPPE-Syllabus"  # Pass in pdf source name with extension strippe
 user_message = st.chat_input("You:", key="user_message")
 
 if user_message:
-    # TODO: Not actually sure if this is working...
     # Initialize Hugging Face embeddings (using a pre-trained model) for document retrieval
     embeddings = HuggingFaceEmbeddings(model_name='sentence-transformers/all-MiniLM-L6-v2',model_kwargs={'device': 'cuda'})
 
@@ -55,13 +54,17 @@ if user_message:
     # What is FAISS?: FAISS (Facebook AI Similarity Search) allows efficient similarity search for large collections of vectors,
     #                 ideal for document embeddings and fast retrieval.
 
-    # TODO: Consider optimizing by not loading the vector database on every user input
-    print("\n*** (D)SelectedDB: " + selected_pdf + " ***\n")
-    db = FAISS.load_local(f"vectordb/required_{selected_pdf}_vectordb", embeddings, allow_dangerous_deserialization=True)
+    # Check if the vectorDB has already been loaded in the session state
+    if "vectordb" not in st.session_state:
+        # Load the vectorDB only once and store it in session_state
+        print("\n*** Loading VectorDB for the first time ***\n")
+        st.session_state.vectordb = FAISS.load_local(f"vectordb/required_{selected_pdf}_vectordb", embeddings, allow_dangerous_deserialization=True)
 
+    # Retrieve the vectorDB from session_state
+    db = st.session_state.vectordb
 
     # Retrieving Documents: The retriever.invoke(user_message) method queries the FAISS database using the user's message
-    #                     to find the most relevant sections of the PDF.
+    #                       to find the most relevant sections of the PDF.
 
     retriever = db.as_retriever()           # Create a retriever from the FAISS database
     docs = retriever.invoke(user_message)   # Find relevant document chunks based on the user message
@@ -74,19 +77,16 @@ if user_message:
         if count==2: break  # Limit to 2 chunks
 
     # Debugging: Print the retrieved context
-    print("\n*** Context: ***")
-    pprint(context)
-    print("\n")
-
+    #print("\n*** Context: ***")
+    #pprint(context)
+    #print("\n")
 
     # st.session_state.llm_history_local provides local history + what appears to be the index.pkl file created
     # when creating our vectordb. My assumption is this is bc we are abusing what "history" really is, but also this
     # .pkl file is only 3000 lines, so likely doesn't contain the entire book? TODO: Confirm thoughts here.
-
     st.session_state.chat_history_local.append({"You":user_message})
     st.session_state.llm_history_local.append({"role": "user", "content": context + "\n" + user_message})
 
-    # TODO: Investigate additional features of the stream object
     # Query ollama LLM with restful API
     stream = ollama.chat(
         model='llama3.1',
