@@ -1,3 +1,5 @@
+# TODO: Separate this functionality from the rest of the program (IE remove document selection.....)
+
 from langchain_community.document_loaders import PyPDFLoader, DirectoryLoader
 from langchain.text_splitter import RecursiveCharacterTextSplitter 
 import langchain.schema.document as document  # Import the Document class
@@ -6,7 +8,7 @@ from langchain_community.vectorstores import FAISS
 import os
 
 def create_vectordb(file_name):
-    loader = DirectoryLoader("../dummy", glob=file_name, loader_cls=PyPDFLoader)
+    loader = DirectoryLoader("./dummy", glob=file_name, loader_cls=PyPDFLoader)
     documents = loader.load()
     for i in range(len(documents)):
         dummy = documents[i].page_content
