@@ -4,6 +4,7 @@ TODO :
 - Improve vectorDB
 - Move history retrieval to a DB
 - Ensure history is persisted over multiple chats (maybe even tied to a specific user?)
+- Create a netdata/Grafana application to properly track resources when developing
 
 """
 
@@ -15,6 +16,13 @@ from langchain_community.embeddings import HuggingFaceEmbeddings            # Em
 from functions.chat_history import save_chat_history, display_chat_history  # Custom functions for handling chat history
 from functions.load_api_token import load_api_token                         # Module for loading API token(s)
 from pprint import pprint                                                   # Pretty print for debugging
+
+# Use st.cache_resource to cache the model loading process
+@st.cache_resource
+def load_embeddings(model_name='sentence-transformers/all-MiniLM-L6-v2'):
+    print("\n*** Loading Hugging Face Embeddings Model for the first time ***\n")
+    # Load the model and return it (it will be cached by Streamlit)
+    return HuggingFaceEmbeddings(model_name=model_name, model_kwargs={'device': 'cuda'})
 
 # TODO: maybe move this to a centralized config.py file at some point...
 # Load environment variables from .env file
@@ -46,14 +54,15 @@ selected_pdf = "NPPE-Syllabus"  # Pass in pdf source name with extension strippe
 user_message = st.chat_input("You:", key="user_message")
 
 if user_message:
-    # Initialize Hugging Face embeddings (using a pre-trained model) for document retrieval
-    embeddings = HuggingFaceEmbeddings(model_name='sentence-transformers/all-MiniLM-L6-v2',model_kwargs={'device': 'cuda'})
-
     # Loading FAISS Database: Load the vector database corresponding to the selected PDF.
     #                         The database contains vector embeddings of document chunks.
     # What is FAISS?: FAISS (Facebook AI Similarity Search) allows efficient similarity search for large collections of vectors,
     #                 ideal for document embeddings and fast retrieval.
 
+    # Load or reuse the cached embeddings model
+    embeddings = load_embeddings()
+
+    # TODO: Move this to us @st.cache_resource (similar to how we are loading embeddings)
     # Check if the vectorDB has already been loaded in the session state
     if "vectordb" not in st.session_state:
         # Load the vectorDB only once and store it in session_state
@@ -96,6 +105,7 @@ if user_message:
 
     # Build the assistant's response incrementally as chunks are received
     new_message = {"role": "assistant", "content": ""}
+    print("\n\n*** New Bot Message Incoming ***\n")
     for chunk in stream:
         print(chunk['message']['content'], end='', flush=True)  # Print to terminal
         new_message["content"] += chunk['message']['content']   # Append to new_message array to display within streamlit app
