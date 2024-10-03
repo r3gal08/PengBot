@@ -5,6 +5,7 @@ TODO :
 - Move history retrieval to a DB
 - Ensure history is persisted over multiple chats (maybe even tied to a specific user?)
 - Create a netdata/Grafana application to properly track resources when developing
+- There must be a way to create better and more accurate vectorDBs...
 
 """
 
@@ -17,12 +18,31 @@ from functions.chat_history import save_chat_history, display_chat_history  # Cu
 from functions.load_api_token import load_api_token                         # Module for loading API token(s)
 from pprint import pprint                                                   # Pretty print for debugging
 
-# Use st.cache_resource to cache the model loading process
+# # Uncomment to enable PDF and vectorDB creation:
+#from functions.pdf_processing import process_pdf_and_vectordb
+#selected_pdf = process_pdf_and_vectordb()
+#print("Selected_pdf: " + selected_pdf + "\n")
+selected_pdf = "NPPE-Syllabus"                          # Pass in pdf source name with extension stripped off
+model_name = 'sentence-transformers/all-MiniLM-L6-v2'   # Pass in huggingface model to be used
+
+# Use st.cache_resource to cache the model loading process. This is good for non-data objects that don't change often.
+# st.cache_resource is also thread-safe. Therefore, it can be interacted with by multiple users safely
+# If we wanted resources only to be available to a specific session (or user) Session state should be used instead
 @st.cache_resource
-def load_embeddings(model_name='sentence-transformers/all-MiniLM-L6-v2'):
+def load_embeddings(model_name):
     print("\n*** Loading Hugging Face Embeddings Model for the first time ***\n")
     # Load the model and return it (it will be cached by Streamlit)
     return HuggingFaceEmbeddings(model_name=model_name, model_kwargs={'device': 'cuda'})
+
+# TODO: I am not completely certain this will always be thread safe, But I think it is? (at least for now...)
+# Cache the vector database (vectorDB) loading
+# We disable parameter hashing here on the embeddings' argument. This is due to it being a complex argument.
+# This is important to note mainly due to the fact that st.cache_resource will no longer re-run if it detects a
+# change in the "embeddings" variable. THis should be fine in the context of this project, but worth noting if functionality ever changes
+@st.cache_resource
+def load_vectordb(selected_pdf, _embeddings):
+    print("\n*** Loading VectorDB for the first time ***\n")
+    return FAISS.load_local(f"vectordb/required_{selected_pdf}_vectordb", embeddings, allow_dangerous_deserialization=True)
 
 # TODO: maybe move this to a centralized config.py file at some point...
 # Load environment variables from .env file
@@ -42,13 +62,6 @@ if "chat_history_local" not in st.session_state:
 st.write("# PengBot")  # Display the app title
 st.divider()           # Horizontal divider for UI separation
 
-# TODO: There must be a way to create better and more accurate vectorDBs
-# # Uncomment to enable PDF and vectorDB creation:
-#from functions.pdf_processing import process_pdf_and_vectordb
-#selected_pdf = process_pdf_and_vectordb()
-#print("Selected_pdf: " + selected_pdf + "\n")
-selected_pdf = "NPPE-Syllabus"  # Pass in pdf source name with extension stripped off
-
 # TODO: Could add a user in here....
 # Handle new chat or user message interaction logic here...
 user_message = st.chat_input("You:", key="user_message")
@@ -60,17 +73,10 @@ if user_message:
     #                 ideal for document embeddings and fast retrieval.
 
     # Load or reuse the cached embeddings model
-    embeddings = load_embeddings()
+    embeddings = load_embeddings(model_name)
 
-    # TODO: Move this to us @st.cache_resource (similar to how we are loading embeddings)
-    # Check if the vectorDB has already been loaded in the session state
-    if "vectordb" not in st.session_state:
-        # Load the vectorDB only once and store it in session_state
-        print("\n*** Loading VectorDB for the first time ***\n")
-        st.session_state.vectordb = FAISS.load_local(f"vectordb/required_{selected_pdf}_vectordb", embeddings, allow_dangerous_deserialization=True)
-
-    # Retrieve the vectorDB from session_state
-    db = st.session_state.vectordb
+    # Load or reuse the cached vectorDB
+    db = load_vectordb(selected_pdf, embeddings)
 
     # Retrieving Documents: The retriever.invoke(user_message) method queries the FAISS database using the user's message
     #                       to find the most relevant sections of the PDF.
