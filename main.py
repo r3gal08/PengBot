@@ -17,6 +17,8 @@ from langchain_community.embeddings import HuggingFaceEmbeddings            # Em
 from functions.chat_history import save_chat_history, display_chat_history  # Custom functions for handling chat history
 from functions.load_api_token import load_api_token                         # Module for loading API token(s)
 from pprint import pprint                                                   # Pretty print for debugging
+import time                                                                 # Import the time module
+from rich.console import Console                                            # Import Console from the Rich library
 
 # # Uncomment to enable PDF and vectorDB creation:
 #from functions.pdf_processing import process_pdf_and_vectordb
@@ -24,6 +26,7 @@ from pprint import pprint                                                   # Pr
 #print("Selected_pdf: " + selected_pdf + "\n")
 selected_pdf = "NPPE-Syllabus"                          # Pass in pdf source name with extension stripped off
 model_name = 'sentence-transformers/all-MiniLM-L6-v2'   # Pass in huggingface model to be used
+console = Console()                                     # Create a Console object
 
 # Use st.cache_resource to cache the model loading process. This is good for non-data objects that don't change often.
 # st.cache_resource is also thread-safe. Therefore, it can be interacted with by multiple users safely
@@ -92,9 +95,9 @@ if user_message:
         if count==2: break  # Limit to 2 chunks
 
     # Debugging: Print the retrieved context
-    #print("\n*** Context: ***")
-    #pprint(context)
-    #print("\n")
+    # print("\n*** Context: ***")
+    # pprint(context)
+    # print("\n")
 
     # st.session_state.llm_history_local provides local history + what appears to be the index.pkl file created
     # when creating our vectordb. My assumption is this is bc we are abusing what "history" really is, but also this
@@ -112,9 +115,22 @@ if user_message:
     # Build the assistant's response incrementally as chunks are received
     new_message = {"role": "assistant", "content": ""}
     print("\n\n*** New Bot Message Incoming ***\n")
+
+    # Record the start time and re-init chars variable
+    chars = 0
+    start = time.time()
+
     for chunk in stream:
-        print(chunk['message']['content'], end='', flush=True)  # Print to terminal
+        print(chunk['message']['content'], end='', flush=True)  # Print to console
         new_message["content"] += chunk['message']['content']   # Append to new_message array to display within streamlit app
+        chars += len(chunk['message']['content'])               # Count characters
+
+    # Stop the timer after the streaming is complete
+    end = time.time()  # Record the end time
+
+    # Print the results with formatting
+    console.print(f"\n\n{'Time taken:':<12} {end-start:.2f} seconds", style="yellow")
+    console.print(f"{'Chars:':<12} {chars/(end-start):.2f} /second", style="green")
 
     # Append the assistant's message to the chat history
     st.session_state.chat_history_local.append({"Bot":new_message["content"]})
