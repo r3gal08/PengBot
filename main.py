@@ -83,16 +83,20 @@ if user_message:
 
     # Retrieving Documents: The retriever.invoke(user_message) method queries the FAISS database using the user's message
     #                       to find the most relevant sections of the PDF.
-
+    start_retrieve = time.time()
     retriever = db.as_retriever()           # Create a retriever from the FAISS database
     docs = retriever.invoke(user_message)   # Find relevant document chunks based on the user message
 
-    # Retrieve the 2 most relevant document chunks to use as context for the LLM
-    context = ""; count = 0
-    for i in range(len(docs)):
-        context += docs[i].page_content # Append the page content to the context
-        count+=1
-        if count==2: break  # Limit to 2 chunks
+    end_retrieve = time.time()
+    console.print(f"\n\n{'Time taken to retrieve chunks:':<12} {end_retrieve-start_retrieve:.2f} seconds", style="yellow")
+
+    # You were here - Messing around with how many chunks you are using
+    # Retrieve the maximum number of relevant document chunks to use as context for the LLM
+    context = ""
+    max_chunks = len(docs)  # Get the maximum number of chunks available
+    print("max_chunks = " + str(len(docs)))
+    for i in range(max_chunks):
+        context += docs[i].page_content  # Append the page content to the context
 
     # Debugging: Print the retrieved context
     # print("\n*** Context: ***")
