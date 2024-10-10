@@ -1,3 +1,4 @@
+# TODO: There has got to be other programs out there that would do a better job then this.... Maybe?...
 # TODO: Separate this functionality from the rest of the program (IE remove document selection.....)
 
 from langchain_community.document_loaders import PyPDFLoader, DirectoryLoader
